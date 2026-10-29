@@ -1,0 +1,22 @@
+- id: envguard-check
+  name: envguard check
+  description: Validate environment variables against envguard schema
+  entry: envguard check
+  language: system
+  files: ^(\.env|\.env\..*|envguard\.ya?ml)$
+  pass_filenames: false
+
+- id: envguard-sync
+  name: envguard sync
+  description: Verify .env.example matches schema
+  entry: envguard sync
+  language: system
+  files: ^envguard\.ya?ml$
+  pass_filenames: false
+
+- id: envguard-scan
+  name: envguard scan
+  description: Scan files for leaked secrets and credentials
+  entry: envguard scan
+  language: system
+  pass_filenames: true
