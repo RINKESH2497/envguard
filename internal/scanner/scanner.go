@@ -142,10 +142,8 @@ var skipDirs = map[string]bool{
 	"__pycache__":  true,
 }
 
-// skipFiles lists specific filenames that should always be skipped.
-var skipFiles = map[string]bool{
-	".env": true,
-}
+// skipFiles lists specific filenames that should always be skipped during traversal.
+var skipFiles = map[string]bool{}
 
 // Scan walks the configured paths, scans each eligible file, and returns
 // aggregated results.
@@ -311,6 +309,16 @@ func ScanFile(path string, threshold float64) ([]Finding, error) {
 		// Check for AWS Secret Key (requires high entropy), avoiding dupes if already matched
 		for _, m := range awsSecretKeyRe.FindAllString(line, -1) {
 			if matchedTokens[m] {
+				continue
+			}
+			isSub := false
+			for matched := range matchedTokens {
+				if strings.Contains(matched, m) || strings.Contains(m, matched) {
+					isSub = true
+					break
+				}
+			}
+			if isSub {
 				continue
 			}
 			if shannonEntropy(m) >= threshold {

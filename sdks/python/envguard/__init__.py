@@ -164,21 +164,32 @@ class Schema:
         raw: The raw parsed YAML dictionary.
     """
 
-    def __init__(self, data: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        data: Optional[Dict[str, Any]] = None,
+        *,
+        version: str = "1",
+        vars: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        if data is None:
+            data = {"version": version, "vars": vars or {}}
         self.raw = data
-        self.version: str = str(data.get("version", "1"))
-        self.vars: Dict[str, VarSpec] = {}
+        self.version = str(data.get("version", version))
+        self.vars = {}
 
         vars_section = data.get("vars") or data.get("variables") or {}
         if not isinstance(vars_section, dict):
             raise ValueError("'vars' section in schema must be a mapping")
 
         for name, spec_data in vars_section.items():
+            if isinstance(spec_data, VarSpec):
+                self.vars[name] = spec_data
+                continue
             if spec_data is None:
                 spec_data = {}
             if not isinstance(spec_data, dict):
                 raise ValueError(
-                    f"Variable {name!r}: spec must be a mapping, got {type(spec_data).__name__}"
+                    f"Variable {name!r}: spec must be a mapping or VarSpec, got {type(spec_data).__name__}"
                 )
             self.vars[name] = _parse_var_spec(name, spec_data)
 

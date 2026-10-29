@@ -16,6 +16,7 @@ import (
 
 	"github.com/RINKESH2497/envguard/internal/dotenv"
 	"github.com/RINKESH2497/envguard/internal/schema"
+	"golang.org/x/term"
 )
 
 // Options configures the interactive setup session.
@@ -148,7 +149,7 @@ func Run(opts Options) (*SetupResult, error) {
 			continue
 		}
 
-		value, skipped, err := promptForVar(v, scanner, out)
+		value, skipped, err := promptForVar(v, opts.In, scanner, out)
 		if err != nil {
 			return nil, err
 		}
@@ -180,7 +181,7 @@ func Run(opts Options) (*SetupResult, error) {
 
 // promptForVar handles the interactive prompt for a single variable.
 // It returns the entered value, whether it was skipped, and any error.
-func promptForVar(v schema.Var, sc *bufio.Scanner, out io.Writer) (string, bool, error) {
+func promptForVar(v schema.Var, in io.Reader, sc *bufio.Scanner, out io.Writer) (string, bool, error) {
 	reqLabel := "optional"
 	if v.Required {
 		reqLabel = "REQUIRED"
@@ -200,7 +201,7 @@ func promptForVar(v schema.Var, sc *bufio.Scanner, out io.Writer) (string, bool,
 
 	// Show secret note.
 	if v.Secret {
-		fmt.Fprintf(out, "   🔒 This is a secret value\n")
+		fmt.Fprintf(out, "   🔒 This is a secret value (input will be hidden)\n")
 	}
 
 	// Show allowed values as a numbered list.
@@ -224,18 +225,33 @@ func promptForVar(v schema.Var, sc *bufio.Scanner, out io.Writer) (string, bool,
 	for {
 		fmt.Fprint(out, prompt)
 
-		if !sc.Scan() {
-			if err := sc.Err(); err != nil {
-				return "", false, fmt.Errorf("interactive: reading input: %w", err)
+		var input string
+		isTerminalSecret := false
+		if v.Secret {
+			if f, ok := in.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
+				isTerminalSecret = true
+				bytePass, err := term.ReadPassword(int(f.Fd()))
+				fmt.Fprintln(out) // add newline after masked entry
+				if err != nil {
+					return "", false, fmt.Errorf("interactive: reading secret input: %w", err)
+				}
+				input = strings.TrimSpace(string(bytePass))
 			}
-			// EOF — treat as skip for optional, error for required.
-			if v.Required {
-				return "", false, fmt.Errorf("interactive: unexpected end of input for required var %s", v.Name)
-			}
-			return "", true, nil
 		}
 
-		input := strings.TrimSpace(sc.Text())
+		if !isTerminalSecret {
+			if !sc.Scan() {
+				if err := sc.Err(); err != nil {
+					return "", false, fmt.Errorf("interactive: reading input: %w", err)
+				}
+				// EOF — treat as skip for optional, error for required.
+				if v.Required {
+					return "", false, fmt.Errorf("interactive: unexpected end of input for required var %s", v.Name)
+				}
+				return "", true, nil
+			}
+			input = strings.TrimSpace(sc.Text())
+		}
 
 		// Handle skip.
 		if input == "s" && !v.Required {

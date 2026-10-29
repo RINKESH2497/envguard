@@ -95,4 +95,16 @@ func TestScanExplicitDotEnv(t *testing.T) {
 	if res.SecretsFound == 0 {
 		t.Error("expected explicit .env scan to detect secrets, found 0")
 	}
+
+	// Scanning directory containing .env should also detect secrets
+	resDir, err := Scan(Options{
+		Paths:     []string{tmpDir},
+		Recursive: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resDir.SecretsFound == 0 {
+		t.Error("expected directory scan to include .env and detect secrets, found 0")
+	}
 }

@@ -1,6 +1,11 @@
 import os
+import sys
 import tempfile
 import unittest
+
+# Ensure parent directory is on sys.path for direct execution
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from envguard import Schema, VarSpec, parse_dotenv, validate
 
 
@@ -23,15 +28,20 @@ class TestEnvGuard(unittest.TestCase):
                 os.remove(f_path)
 
     def test_validate_rules(self):
+        # Support dict-based Schema initialization
         schema = Schema(
-            version="1",
-            vars={
-                "PORT": VarSpec(type="integer", required=True),
-                "DEBUG": VarSpec(type="boolean", required=False, default="false"),
-                "DATABASE_URL": VarSpec(
-                    type="url", required=True, pattern=r"^postgres(ql)?://.+"
-                ),
-            },
+            {
+                "version": "1",
+                "vars": {
+                    "PORT": {"type": "integer", "required": True},
+                    "DEBUG": {"type": "boolean", "required": False, "default": "false"},
+                    "DATABASE_URL": {
+                        "type": "url",
+                        "required": True,
+                        "pattern": r"^postgres(ql)?://.+",
+                    },
+                },
+            }
         )
 
         # Invalid env
@@ -49,6 +59,15 @@ class TestEnvGuard(unittest.TestCase):
         )
         self.assertFalse(good_result.has_errors())
         self.assertEqual(good_result.valid, 3)
+
+        # Also support kwargs and VarSpec objects
+        kwarg_schema = Schema(
+            version="1",
+            vars={
+                "PORT": VarSpec(type="integer", required=True),
+            },
+        )
+        self.assertEqual(len(kwarg_schema.vars), 1)
 
 
 if __name__ == "__main__":
