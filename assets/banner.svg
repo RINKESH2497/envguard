@@ -1,0 +1,96 @@
+<svg width="840" height="240" viewBox="0 0 840 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="840" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B0F19" />
+      <stop offset="100%" stop-color="#111827" />
+    </linearGradient>
+
+    <!-- Ambient Glow -->
+    <radialGradient id="cyanGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(180 120) rotate(90) scale(140 220)">
+      <stop stop-color="#06B6D4" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="purpleGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(680 140) rotate(90) scale(160 200)">
+      <stop stop-color="#8B5CF6" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Shield Gradient -->
+    <linearGradient id="shieldGrad" x1="60" y1="50" x2="160" y2="170" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="50%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#A855F7" />
+    </linearGradient>
+
+    <!-- Title Gradient -->
+    <linearGradient id="textGrad" x1="200" y1="70" x2="520" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+
+    <!-- Grid pattern -->
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#1E293B" stroke-width="0.5" stroke-opacity="0.4" />
+    </pattern>
+  </defs>
+
+  <!-- Container Box with Rounded Corners & Border -->
+  <rect width="840" height="240" rx="16" fill="url(#bgGrad)" />
+  <rect width="840" height="240" rx="16" fill="url(#grid)" />
+  <rect width="840" height="240" rx="16" fill="url(#cyanGlow)" />
+  <rect width="840" height="240" rx="16" fill="url(#purpleGlow)" />
+  <rect x="1" y="1" width="838" height="238" rx="15" stroke="#334155" stroke-opacity="0.6" stroke-width="1.5" />
+
+  <!-- Logo Group (Left Side) -->
+  <g transform="translate(64, 48)">
+    <!-- Glow Backdrop -->
+    <path d="M72 16L122 36V78C122 108 100 130 72 138C44 130 22 108 22 78V36L72 16Z" fill="#06B6D4" fill-opacity="0.15" />
+    
+    <!-- Shield Outline -->
+    <path d="M72 18L118 36.5V76C118 103 98 124 72 131C46 124 26 103 26 76V36.5L72 18Z" fill="#0B0F19" stroke="url(#shieldGrad)" stroke-width="3.5" stroke-linejoin="round" />
+
+    <!-- Lock Icon -->
+    <rect x="58" y="66" width="28" height="24" rx="5" fill="url(#shieldGrad)" />
+    <path d="M63 66V56C63 51 67 47 72 47C77 47 81 51 81 56V66" stroke="url(#shieldGrad)" stroke-width="4" stroke-linecap="round" />
+    <circle cx="72" cy="76" r="3" fill="#0B0F19" />
+    <path d="M72 79V83" stroke="#0B0F19" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- Verified Badge Checkmark -->
+    <circle cx="102" cy="100" r="15" fill="#10B981" />
+    <path d="M96 100L99.5 104L108 96" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- Typography (Right Side) -->
+  <g transform="translate(224, 0)">
+    <!-- Project Name -->
+    <text x="0" y="88" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="44" font-weight="800" fill="url(#textGrad)" letter-spacing="-1">envguard</text>
+    
+    <!-- Tag / Pill -->
+    <rect x="202" y="58" width="56" height="22" rx="11" fill="#06B6D4" fill-opacity="0.15" stroke="#06B6D4" stroke-opacity="0.4" />
+    <text x="230" y="73" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#22D3EE" text-anchor="middle">v0.1.0</text>
+
+    <!-- Tagline -->
+    <text x="0" y="122" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="500" fill="#94A3B8">Stop deploying with missing or invalid environment variables.</text>
+
+    <!-- Feature Pills -->
+    <g transform="translate(0, 150)">
+      <!-- Pill 1 -->
+      <rect x="0" y="0" width="144" height="28" rx="14" fill="#1E293B" stroke="#334155" />
+      <text x="72" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#E2E8F0" text-anchor="middle">⚡ Schema Validation</text>
+
+      <!-- Pill 2 -->
+      <rect x="152" y="0" width="132" height="28" rx="14" fill="#1E293B" stroke="#334155" />
+      <text x="218" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#E2E8F0" text-anchor="middle">🔒 Secret Scanner</text>
+
+      <!-- Pill 3 -->
+      <rect x="292" y="0" width="128" height="28" rx="14" fill="#1E293B" stroke="#334155" />
+      <text x="356" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#E2E8F0" text-anchor="middle">🔄 .env Sync</text>
+
+      <!-- Pill 4 -->
+      <rect x="428" y="0" width="138" height="28" rx="14" fill="#1E293B" stroke="#334155" />
+      <text x="497" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#E2E8F0" text-anchor="middle">📦 Node &amp; Python</text>
+    </g>
+  </g>
+</svg>

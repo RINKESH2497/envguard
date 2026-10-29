@@ -1,0 +1,34 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGrad" x1="16" y1="12" x2="112" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#06B6D4" />
+      <stop offset="50%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="64" y1="20" x2="64" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0.05" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Shield Glow -->
+  <path d="M64 16L104 32V68C104 92 86 110 64 116C42 110 24 92 24 68V32L64 16Z" fill="url(#glowGrad)" filter="url(#glow)" />
+
+  <!-- Main Shield Outline -->
+  <path d="M64 18L102 33.5V67C102 89.5 85 106.8 64 112.5C43 106.8 26 89.5 26 67V33.5L64 18Z" fill="#0B0F19" stroke="url(#shieldGrad)" stroke-width="4" stroke-linejoin="round" />
+
+  <!-- Inner Check & Terminal Prompt Motif -->
+  <!-- Keyhole / Terminal cursor / Lock icon -->
+  <rect x="52" y="56" width="24" height="20" rx="4" fill="url(#shieldGrad)" />
+  <path d="M56 56V48C56 43.5817 59.5817 40 64 40C68.4183 40 72 43.5817 72 48V56" stroke="url(#shieldGrad)" stroke-width="4" stroke-linecap="round" />
+  <circle cx="64" cy="65" r="2.5" fill="#0B0F19" />
+  <path d="M64 67.5V71" stroke="#0B0F19" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Checkmark Badge on bottom right of shield -->
+  <circle cx="88" cy="88" r="14" fill="#10B981" />
+  <path d="M82 88L86.5 92.5L94.5 84" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

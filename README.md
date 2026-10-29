@@ -1,17 +1,13 @@
 <p align="center">
-  <!-- TODO: Replace with actual logo -->
-  <img src="https://via.placeholder.com/200x200?text=envguard" alt="envguard logo" width="200"/>
-  <br/>
-  <strong>envguard</strong>
-  <br/>
-  <em>Stop deploying with missing env vars.</em>
+  <img src="assets/banner.svg" alt="envguard banner" width="100%"/>
 </p>
 
 <p align="center">
-  <a href="https://goreportcard.com/report/github.com/envguard/envguard"><img src="https://goreportcard.com/badge/github.com/envguard/envguard" alt="Go Report Card"></a>
-  <a href="https://github.com/envguard/envguard/actions/workflows/ci.yml"><img src="https://github.com/envguard/envguard/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/envguard/envguard/releases/latest"><img src="https://img.shields.io/github/v/release/envguard/envguard" alt="Release"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Version" />
+  <img src="https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
 </p>
 
 ---
