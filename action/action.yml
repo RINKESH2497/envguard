@@ -1,0 +1,49 @@
+name: "envguard"
+description: "Validate environment variables against your envguard.yaml schema"
+author: "envguard contributors"
+
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  schema-path:
+    description: "Path to envguard.yaml"
+    default: "envguard.yaml"
+  env-path:
+    description: "Path to .env file"
+    default: ".env"
+  strict:
+    description: "Treat warnings as errors"
+    default: "false"
+  command:
+    description: "Command to run (check, sync, scan)"
+    default: "check"
+  version:
+    description: "envguard version to install"
+    default: "latest"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install envguard
+      shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        if [ "$VERSION" = "latest" ]; then
+          go install github.com/envguard/envguard/cmd/envguard@latest
+        else
+          go install github.com/envguard/envguard/cmd/envguard@v${VERSION}
+        fi
+
+    - name: Run envguard
+      shell: bash
+      run: |
+        ARGS="${{ inputs.command }}"
+        if [ "${{ inputs.command }}" = "check" ]; then
+          ARGS="$ARGS --config ${{ inputs.schema-path }} --env ${{ inputs.env-path }}"
+          if [ "${{ inputs.strict }}" = "true" ]; then
+            ARGS="$ARGS --strict"
+          fi
+        fi
+        envguard $ARGS

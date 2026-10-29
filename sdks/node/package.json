@@ -1,0 +1,28 @@
+{
+  "name": "envguard",
+  "version": "0.1.0",
+  "description": "Runtime environment variable validation against envguard.yaml schemas",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["env", "environment", "validation", "dotenv", "config"],
+  "license": "MIT",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0",
+    "@types/js-yaml": "^4.0.9"
+  },
+  "files": ["dist/"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/envguard/envguard.git",
+    "directory": "sdks/node"
+  }
+}

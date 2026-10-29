@@ -1,0 +1,43 @@
+# envguard.yaml — Schema definition for envguard development and testing
+version: "1"
+
+vars:
+  ENVGUARD_ENV:
+    type: string
+    required: false
+    default: "development"
+    description: "Current environment tier"
+    allowed:
+      - development
+      - staging
+      - production
+
+  LOG_LEVEL:
+    type: string
+    required: false
+    default: "info"
+    description: "Application log output level"
+    allowed:
+      - debug
+      - info
+      - warn
+      - error
+
+  API_PORT:
+    type: integer
+    required: false
+    default: "8080"
+    description: "Local development server port"
+
+  DATABASE_URL:
+    type: string
+    required: true
+    pattern: "^postgres(ql)?://.+"
+    description: "Database connection URL"
+    secret: true
+
+  SECRET_KEY:
+    type: string
+    required: true
+    description: "Secret signing key"
+    secret: true

@@ -1,0 +1,98 @@
+# envguard.yaml — Example schema for a web application
+# This file defines every environment variable your app needs,
+# with types, constraints, defaults, and descriptions.
+
+version: "1"
+
+meta:
+  name: my-web-app
+  description: Environment schema for a typical web application
+
+variables:
+  # ── Database ──────────────────────────────────────────────
+  DATABASE_URL:
+    type: string
+    required: true
+    description: "PostgreSQL connection string"
+    pattern: "^postgres(ql)?://.+"
+    secret: true
+
+  # ── Cache ─────────────────────────────────────────────────
+  REDIS_URL:
+    type: url
+    required: false
+    default: "redis://localhost:6379"
+    description: "Redis connection URL"
+
+  ENABLE_CACHE:
+    type: boolean
+    required: false
+    default: true
+    description: "Enable Redis caching layer"
+
+  # ── Server ────────────────────────────────────────────────
+  PORT:
+    type: integer
+    required: false
+    default: 3000
+    description: "HTTP server listen port"
+    min: 1
+    max: 65535
+
+  NODE_ENV:
+    type: string
+    required: true
+    description: "Application environment"
+    allowed:
+      - development
+      - staging
+      - production
+
+  CORS_ORIGINS:
+    type: string
+    required: false
+    description: "Comma-separated list of allowed CORS origins"
+    example: "https://example.com,https://app.example.com"
+
+  # ── Auth & Secrets ────────────────────────────────────────
+  API_KEY:
+    type: string
+    required: true
+    description: "External API key for third-party service"
+    secret: true
+
+  JWT_SECRET:
+    type: string
+    required: true
+    description: "Secret key for signing JSON Web Tokens"
+    secret: true
+    min_length: 32
+
+  # ── Email / SMTP ──────────────────────────────────────────
+  SMTP_HOST:
+    type: string
+    required: false
+    description: "SMTP server hostname"
+
+  SMTP_PORT:
+    type: integer
+    required: false
+    default: 587
+    description: "SMTP server port"
+
+  # ── Logging & Monitoring ──────────────────────────────────
+  LOG_LEVEL:
+    type: string
+    required: false
+    default: "info"
+    description: "Application log level"
+    allowed:
+      - debug
+      - info
+      - warn
+      - error
+
+  SENTRY_DSN:
+    type: url
+    required: false
+    description: "Sentry DSN for error tracking"
