@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -12,12 +11,12 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/envguard/envguard/internal/dotenv"
-	"github.com/envguard/envguard/internal/envsync"
-	"github.com/envguard/envguard/internal/interactive"
-	"github.com/envguard/envguard/internal/scanner"
-	"github.com/envguard/envguard/internal/schema"
-	"github.com/envguard/envguard/internal/validator"
+	"github.com/RINKESH2497/envguard/internal/dotenv"
+	"github.com/RINKESH2497/envguard/internal/envsync"
+	"github.com/RINKESH2497/envguard/internal/interactive"
+	"github.com/RINKESH2497/envguard/internal/scanner"
+	"github.com/RINKESH2497/envguard/internal/schema"
+	"github.com/RINKESH2497/envguard/internal/validator"
 )
 
 var (
@@ -155,6 +154,9 @@ var initCmd = &cobra.Command{
 					Description: fmt.Sprintf("%s configuration variable", k),
 					Secret:      isSecret,
 				}
+				if strings.HasPrefix(val, "postgres://") || strings.HasPrefix(val, "postgresql://") {
+					spec.Pattern = `^postgres(ql)?://.+`
+				}
 				if !isSecret && val != "" {
 					spec.Example = val
 				}
@@ -271,6 +273,7 @@ var checkCmd = &cobra.Command{
 			opts.EnvPath = checkEnvPath
 		case "env":
 			opts.EnvVars = envFromProcess()
+			opts.IgnoreUndocumented = true
 		case "auto":
 			merged := make(map[string]string)
 			if fVars, err := dotenv.Parse(checkEnvPath); err == nil {
@@ -283,6 +286,7 @@ var checkCmd = &cobra.Command{
 				merged[k] = v
 			}
 			opts.EnvVars = merged
+			opts.IgnoreUndocumented = true
 		default:
 			fmt.Fprintf(os.Stderr, "Error: invalid --env-source %q (must be 'file', 'env', or 'auto')\n", checkEnvSource)
 			os.Exit(1)

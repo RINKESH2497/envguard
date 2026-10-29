@@ -81,7 +81,7 @@ class VarSpec:
     """Specification for a single environment variable declared in the schema."""
 
     type: str = "string"
-    required: bool = True
+    required: bool = False
     default: Optional[str] = None
     description: str = ""
     pattern: Optional[str] = None
@@ -204,7 +204,7 @@ def _parse_var_spec(name: str, data: Dict[str, Any]) -> VarSpec:
 
     return VarSpec(
         type=str(data.get("type", "string")),
-        required=bool(data.get("required", True)),
+        required=bool(data.get("required", False)),
         default=default_raw,
         description=str(data.get("description", "")),
         pattern=data.get("pattern"),
@@ -294,6 +294,29 @@ def parse_dotenv(path: Union[str, Path] = ".env") -> Dict[str, str]:
     return env
 
 
+def _unescape_double_quoted(raw: str) -> str:
+    result = []
+    i = 0
+    while i < len(raw):
+        if raw[i] == "\\" and i + 1 < len(raw):
+            nxt = raw[i + 1]
+            if nxt == "n":
+                result.append("\n")
+            elif nxt == "t":
+                result.append("\t")
+            elif nxt == '"':
+                result.append('"')
+            elif nxt == "\\":
+                result.append("\\")
+            else:
+                result.append(nxt)
+            i += 2
+        else:
+            result.append(raw[i])
+            i += 1
+    return "".join(result)
+
+
 def _parse_dotenv_value(raw: str) -> str:
     """Extract the value portion of a .env line, respecting quotes."""
     if not raw:
@@ -304,12 +327,7 @@ def _parse_dotenv_value(raw: str) -> str:
         end = _find_closing_quote(raw, '"')
         if end != -1:
             inner = raw[1:end]
-            # Process escape sequences inside double quotes.
-            inner = inner.replace("\\n", "\n")
-            inner = inner.replace("\\t", "\t")
-            inner = inner.replace('\\"', '"')
-            inner = inner.replace("\\\\", "\\")
-            return inner
+            return _unescape_double_quoted(inner)
         # No closing quote — return everything after the opening quote.
         return raw[1:]
 
@@ -373,8 +391,8 @@ def _validate_type(value: str, expected_type: str) -> Optional[str]:
 
     if expected_type == "url":
         parsed = urllib.parse.urlparse(value)
-        if not parsed.scheme:
-            return f"expected URL with scheme, got {value!r}"
+        if not parsed.scheme or not parsed.netloc:
+            return f"expected URL with scheme and host, got {value!r}"
         return None
 
     if expected_type == "email":

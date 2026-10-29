@@ -6,7 +6,7 @@ Catch misconfigurations at startup, not in production.
 ## Installation
 
 ```bash
-pip install envguard
+pip install py-envguard
 ```
 
 ## Quick Start

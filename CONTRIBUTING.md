@@ -19,7 +19,7 @@ This project follows the [Contributor Covenant Code of Conduct](https://www.cont
 
 ## Reporting Bugs
 
-Found a bug? Please [open an issue](https://github.com/envguard/envguard/issues/new?template=bug_report.md) with:
+Found a bug? Please [open an issue](https://github.com/RINKESH2497/envguard/issues/new?template=bug_report.yml) with:
 
 1. **A clear, descriptive title.**
 2. **Steps to reproduce** — include your `envguard.yaml`, the command you ran, and any relevant `.env` contents (redact secrets!).
@@ -29,7 +29,7 @@ Found a bug? Please [open an issue](https://github.com/envguard/envguard/issues/
 
 ## Requesting Features
 
-Have an idea? [Open a feature request](https://github.com/envguard/envguard/issues/new?template=feature_request.md) with:
+Have an idea? [Open a feature request](https://github.com/RINKESH2497/envguard/issues/new?template=feature_request.yml) with:
 
 1. **Problem statement** — what pain point does this address?
 2. **Proposed solution** — how would it work from a user's perspective?

@@ -42,8 +42,11 @@ type Schema struct {
 	// Version is the schema format version (e.g. "1").
 	Version string `yaml:"version"`
 
+	// Meta contains arbitrary project metadata (e.g. name, description).
+	Meta map[string]any `yaml:"meta,omitempty"`
+
 	// Vars maps environment variable names to their specifications.
-	Vars map[string]VarSpec `yaml:"vars"`
+	Vars map[string]VarSpec `yaml:"vars,omitempty"`
 
 	// Variables is an accepted alias for Vars in the schema YAML.
 	Variables map[string]VarSpec `yaml:"variables,omitempty"`
@@ -62,26 +65,41 @@ type VarSpec struct {
 	Required bool `yaml:"required"`
 
 	// Default is the fallback value used when the variable is absent.
-	Default string `yaml:"default"`
+	Default string `yaml:"default,omitempty"`
 
 	// Description is a human-readable explanation of the variable's purpose.
-	Description string `yaml:"description"`
+	Description string `yaml:"description,omitempty"`
 
 	// Pattern is a regular expression the value must match. When non-empty the
 	// pattern is compiled and tested against the raw string value.
-	Pattern string `yaml:"pattern"`
+	Pattern string `yaml:"pattern,omitempty"`
 
 	// Allowed is a whitelist of acceptable values. When non-empty the variable
 	// value must be an exact match for one of the listed strings.
-	Allowed []string `yaml:"allowed"`
+	Allowed []string `yaml:"allowed,omitempty"`
 
 	// Secret marks the variable as sensitive (e.g. API keys, passwords). The
 	// validator may emit warnings when the value looks like a placeholder.
-	Secret bool `yaml:"secret"`
+	Secret bool `yaml:"secret,omitempty"`
 
 	// Example is a sample value shown in documentation and generated .env
 	// templates.
-	Example string `yaml:"example"`
+	Example string `yaml:"example,omitempty"`
+
+	// Min is the minimum numeric value for integer or float variables.
+	Min *float64 `yaml:"min,omitempty"`
+
+	// Max is the maximum numeric value for integer or float variables.
+	Max *float64 `yaml:"max,omitempty"`
+
+	// MinLength is the minimum string length.
+	MinLength *int `yaml:"min_length,omitempty"`
+
+	// MaxLength is the maximum string length.
+	MaxLength *int `yaml:"max_length,omitempty"`
+
+	// Deprecated emits an advisory warning if this variable is set.
+	Deprecated string `yaml:"deprecated,omitempty"`
 }
 
 // DefaultSchemaPath returns the conventional file name for an envguard schema.
@@ -166,10 +184,18 @@ func LoadFromReader(r io.Reader) (*Schema, error) {
 // expression. An error is returned listing all problems found, or nil if the
 // schema is valid.
 func (s *Schema) Validate() error {
-	if s.Vars == nil && s.Variables != nil {
-		s.Vars = s.Variables
-	}
 	if s.Vars == nil {
+		s.Vars = make(map[string]VarSpec)
+	}
+	// Merge variables into vars if both are present
+	if s.Variables != nil {
+		for k, v := range s.Variables {
+			if _, exists := s.Vars[k]; !exists {
+				s.Vars[k] = v
+			}
+		}
+	}
+	if len(s.Vars) == 0 {
 		return fmt.Errorf("schema: no vars defined")
 	}
 
@@ -210,8 +236,17 @@ func (s *Schema) Validate() error {
 			}
 		}
 
-		// Warn about contradictions: required + default is unusual.
-		// (we don't treat this as an error, just leave it for documentation)
+		// Check min/max bounds.
+		if spec.Min != nil && spec.Max != nil && *spec.Min > *spec.Max {
+			errs = append(errs, fmt.Sprintf("var %q: min (%v) cannot be greater than max (%v)",
+				name, *spec.Min, *spec.Max))
+		}
+
+		// Check min_length/max_length bounds.
+		if spec.MinLength != nil && spec.MaxLength != nil && *spec.MinLength > *spec.MaxLength {
+			errs = append(errs, fmt.Sprintf("var %q: min_length (%d) cannot be greater than max_length (%d)",
+				name, *spec.MinLength, *spec.MaxLength))
+		}
 
 		// Validate allowed list doesn't contain empty strings.
 		for i, v := range spec.Allowed {

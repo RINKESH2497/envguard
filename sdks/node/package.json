@@ -22,7 +22,7 @@
   "files": ["dist/"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/envguard/envguard.git",
+    "url": "https://github.com/RINKESH2497/envguard.git",
     "directory": "sdks/node"
   }
 }

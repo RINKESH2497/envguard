@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/envguard/envguard/internal/dotenv"
-	"github.com/envguard/envguard/internal/schema"
+	"github.com/RINKESH2497/envguard/internal/dotenv"
+	"github.com/RINKESH2497/envguard/internal/schema"
 )
 
 // placeholderPatterns are values that suggest a secret has not been configured.
@@ -43,6 +43,8 @@ var placeholderPatterns = []string{
 	"test",
 	"dummy",
 }
+
+var emailRegex = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
 
 // Issue represents a single validation finding — either an error or a warning.
 type Issue struct {
@@ -127,6 +129,10 @@ type Options struct {
 	// StrictMode promotes all warnings to errors, causing them to contribute
 	// to a non-zero exit code.
 	StrictMode bool
+
+	// IgnoreUndocumented disables warnings/errors for variables present in
+	// the environment but not declared in the schema.
+	IgnoreUndocumented bool
 }
 
 // Validate performs a full validation of environment variables against the
@@ -195,13 +201,21 @@ func Validate(opts Options) (*Result, error) {
 	}
 
 	// --- 4. Check for undocumented variables ------------------------------
-	for envKey := range envVars {
-		if _, declared := sch.Vars[envKey]; !declared {
-			result.Warnings = append(result.Warnings, Issue{
-				VarName:  envKey,
-				Message:  "variable is set but not declared in schema (undocumented)",
-				Severity: "warning",
-			})
+	if !opts.IgnoreUndocumented {
+		for envKey := range envVars {
+			if _, declared := sch.Vars[envKey]; !declared {
+				issue := Issue{
+					VarName:  envKey,
+					Message:  "variable is set but not declared in schema (undocumented)",
+					Severity: "warning",
+				}
+				if opts.StrictMode {
+					issue.Severity = "error"
+					result.Errors = append(result.Errors, issue)
+				} else {
+					result.Warnings = append(result.Warnings, issue)
+				}
+			}
 		}
 	}
 
@@ -247,13 +261,22 @@ func validateVar(name, value string, exists bool, spec schema.VarSpec) []Issue {
 	var issues []Issue
 
 	// Apply default when the variable is absent.
-	if !exists && spec.Default != "" {
+	if (!exists || value == "") && spec.Default != "" {
 		value = spec.Default
 		exists = true
 	}
 
+	// --- Deprecated check -------------------------------------------------
+	if spec.Deprecated != "" && exists && value != "" {
+		issues = append(issues, Issue{
+			VarName:  name,
+			Message:  fmt.Sprintf("variable is deprecated: %s", spec.Deprecated),
+			Severity: "warning",
+		})
+	}
+
 	// --- Required check ---------------------------------------------------
-	if spec.Required && !exists {
+	if spec.Required && (!exists || strings.TrimSpace(value) == "") {
 		issues = append(issues, Issue{
 			VarName:  name,
 			Message:  "required variable is not set",
@@ -263,7 +286,7 @@ func validateVar(name, value string, exists bool, spec schema.VarSpec) []Issue {
 	}
 
 	// If the variable is absent and not required, nothing more to check.
-	if !exists {
+	if !exists || value == "" {
 		return issues
 	}
 
@@ -272,9 +295,50 @@ func validateVar(name, value string, exists bool, spec schema.VarSpec) []Issue {
 		issues = append(issues, *typeErr)
 	}
 
-	// --- Pattern check ----------------------------------------------------
+	// --- Range checks (min/max for integer/float) --------------------------
+	if spec.Type == "integer" || spec.Type == "float" {
+		if num, err := strconv.ParseFloat(value, 64); err == nil {
+			if spec.Min != nil && num < *spec.Min {
+				issues = append(issues, Issue{
+					VarName:  name,
+					Message:  fmt.Sprintf("value %v is less than minimum %v", num, *spec.Min),
+					Severity: "error",
+				})
+			}
+			if spec.Max != nil && num > *spec.Max {
+				issues = append(issues, Issue{
+					VarName:  name,
+					Message:  fmt.Sprintf("value %v exceeds maximum %v", num, *spec.Max),
+					Severity: "error",
+				})
+			}
+		}
+	}
+
+	// --- Length checks (min_length/max_length) -----------------------------
+	valLen := len(value)
+	if spec.MinLength != nil && valLen < *spec.MinLength {
+		issues = append(issues, Issue{
+			VarName:  name,
+			Message:  fmt.Sprintf("length %d is less than minimum length %d", valLen, *spec.MinLength),
+			Severity: "error",
+		})
+	}
+	if spec.MaxLength != nil && valLen > *spec.MaxLength {
+		issues = append(issues, Issue{
+			VarName:  name,
+			Message:  fmt.Sprintf("length %d exceeds maximum length %d", valLen, *spec.MaxLength),
+			Severity: "error",
+		})
+	}
+
+	// --- Pattern check (anchored for full match) --------------------------
 	if spec.Pattern != "" {
-		matched, err := regexp.MatchString(spec.Pattern, value)
+		pattern := spec.Pattern
+		if !strings.HasPrefix(pattern, "^") && !strings.HasSuffix(pattern, "$") {
+			pattern = "^(?:" + pattern + ")$"
+		}
+		matched, err := regexp.MatchString(pattern, value)
 		if err != nil {
 			issues = append(issues, Issue{
 				VarName:  name,
@@ -309,7 +373,7 @@ func validateVar(name, value string, exists bool, spec schema.VarSpec) []Issue {
 	}
 
 	// --- Secret placeholder check -----------------------------------------
-	if spec.Secret {
+	if spec.Secret && strings.TrimSpace(value) != "" {
 		if looksLikePlaceholder(value) {
 			issues = append(issues, Issue{
 				VarName:  name,
@@ -349,7 +413,11 @@ func checkType(name, value, typ string) *Issue {
 		}
 
 	case "boolean":
-		if _, err := strconv.ParseBool(value); err != nil {
+		lower := strings.ToLower(strings.TrimSpace(value))
+		switch lower {
+		case "1", "0", "t", "f", "true", "false", "yes", "no", "y", "n", "on", "off":
+			return nil
+		default:
 			return &Issue{
 				VarName:  name,
 				Message:  fmt.Sprintf("expected boolean, got %q (accepted: 1, 0, t, f, true, false, yes, no)", value),
@@ -368,10 +436,7 @@ func checkType(name, value, typ string) *Issue {
 		}
 
 	case "email":
-		// Lightweight check: must contain exactly one @ with non-empty local
-		// and domain parts.
-		parts := strings.SplitN(value, "@", 2)
-		if len(parts) != 2 || parts[0] == "" || parts[1] == "" || !strings.Contains(parts[1], ".") {
+		if !emailRegex.MatchString(value) {
 			return &Issue{
 				VarName:  name,
 				Message:  fmt.Sprintf("expected email address, got %q", value),

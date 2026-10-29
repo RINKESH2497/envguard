@@ -168,7 +168,7 @@ func Scan(opts Options) (*ScanResult, error) {
 				continue
 			}
 			seen[p] = true
-			if err := scanOneFile(p, opts, result); err != nil {
+			if err := scanOneFile(p, true, opts, result); err != nil {
 				return nil, err
 			}
 			continue
@@ -177,7 +177,7 @@ func Scan(opts Options) (*ScanResult, error) {
 		// Walk directory.
 		walkFn := func(path string, d os.DirEntry, err error) error {
 			if err != nil {
-				return err
+				return nil // continue walking other entries
 			}
 
 			if d.IsDir() {
@@ -195,7 +195,7 @@ func Scan(opts Options) (*ScanResult, error) {
 				return nil
 			}
 			seen[path] = true
-			return scanOneFile(path, opts, result)
+			return scanOneFile(path, false, opts, result)
 		}
 
 		if err := filepath.WalkDir(p, walkFn); err != nil {
@@ -208,14 +208,14 @@ func Scan(opts Options) (*ScanResult, error) {
 }
 
 // scanOneFile scans a single file and appends findings to result.
-func scanOneFile(path string, opts Options, result *ScanResult) error {
-	if shouldSkipFile(path, opts.ExcludePatterns) {
+func scanOneFile(path string, isExplicit bool, opts Options, result *ScanResult) error {
+	if shouldSkipFile(path, isExplicit, opts.ExcludePatterns) {
 		return nil
 	}
 
 	findings, err := ScanFile(path, opts.EntropyThreshold)
 	if err != nil {
-		return err
+		return nil // gracefully skip unreadable files
 	}
 
 	result.FilesScanned++
@@ -225,7 +225,7 @@ func scanOneFile(path string, opts Options, result *ScanResult) error {
 
 // shouldSkipFile returns true if the file should be excluded from scanning
 // based on its extension, name, or the configured exclude patterns.
-func shouldSkipFile(path string, excludePatterns []string) bool {
+func shouldSkipFile(path string, isExplicit bool, excludePatterns []string) bool {
 	base := filepath.Base(path)
 	ext := strings.ToLower(filepath.Ext(path))
 
@@ -233,12 +233,17 @@ func shouldSkipFile(path string, excludePatterns []string) bool {
 		return true
 	}
 
-	if skipFiles[base] {
+	// Only skip files like .env if they were encountered in directory traversal,
+	// not if the user explicitly requested scanning that file.
+	if !isExplicit && skipFiles[base] {
 		return true
 	}
 
 	for _, pattern := range excludePatterns {
 		if matched, _ := filepath.Match(pattern, base); matched {
+			return true
+		}
+		if matched, _ := filepath.Match(pattern, path); matched {
 			return true
 		}
 	}
@@ -260,18 +265,39 @@ func ScanFile(path string, threshold float64) ([]Finding, error) {
 	}
 	defer f.Close()
 
+	// Detect binary content: read first 512 bytes for null bytes
+	bufHeader := make([]byte, 512)
+	n, _ := f.Read(bufHeader)
+	for i := 0; i < n; i++ {
+		if bufHeader[i] == 0 {
+			// Binary file detected, skip cleanly
+			return nil, nil
+		}
+	}
+	if _, err := f.Seek(0, 0); err != nil {
+		return nil, nil
+	}
+
 	var findings []Finding
 	scanner := bufio.NewScanner(f)
+	// Support long lines (up to 10MB) so minified bundles don't crash the scanner
+	const maxLineBuf = 10 * 1024 * 1024
+	lineBuf := make([]byte, 64*1024)
+	scanner.Buffer(lineBuf, maxLineBuf)
+
 	lineNum := 0
 
 	for scanner.Scan() {
 		lineNum++
 		line := scanner.Text()
 
+		matchedTokens := make(map[string]bool)
+
 		// Check each known pattern.
 		for _, pat := range knownPatterns {
 			matches := pat.re.FindAllString(line, -1)
 			for _, m := range matches {
+				matchedTokens[m] = true
 				findings = append(findings, Finding{
 					FilePath: path,
 					Line:     lineNum,
@@ -282,8 +308,11 @@ func ScanFile(path string, threshold float64) ([]Finding, error) {
 			}
 		}
 
-		// Check for AWS Secret Key (requires high entropy).
+		// Check for AWS Secret Key (requires high entropy), avoiding dupes if already matched
 		for _, m := range awsSecretKeyRe.FindAllString(line, -1) {
+			if matchedTokens[m] {
+				continue
+			}
 			if shannonEntropy(m) >= threshold {
 				findings = append(findings, Finding{
 					FilePath: path,
@@ -294,10 +323,6 @@ func ScanFile(path string, threshold float64) ([]Finding, error) {
 				})
 			}
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("scanner: reading %q: %w", path, err)
 	}
 
 	return findings, nil

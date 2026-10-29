@@ -7,13 +7,15 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/envguard/envguard/internal/dotenv"
-	"github.com/envguard/envguard/internal/schema"
+	"github.com/RINKESH2497/envguard/internal/dotenv"
+	"github.com/RINKESH2497/envguard/internal/schema"
 )
 
 // Options configures the interactive setup session.
@@ -310,8 +312,9 @@ func validateInput(value string, v schema.Var) error {
 			return fmt.Errorf("expected a boolean (true/false, 1/0, yes/no)")
 		}
 	case "url":
-		if !strings.HasPrefix(value, "http://") && !strings.HasPrefix(value, "https://") {
-			return fmt.Errorf("expected a URL starting with http:// or https://")
+		u, err := url.Parse(value)
+		if err != nil || u.Scheme == "" || u.Host == "" {
+			return fmt.Errorf("expected URL with scheme and host (e.g. https://example.com or redis://localhost:6379)")
 		}
 	case "email":
 		if !strings.Contains(value, "@") || !strings.Contains(value, ".") {
@@ -379,6 +382,29 @@ func writeEnvFile(path string, orderedVars []schema.Var, values map[string]strin
 		}
 
 		buf.WriteString(fmt.Sprintf("%s=%s\n", v.Name, val))
+	}
+
+	// Preserve any undeclared existing variables in merge mode
+	declaredSet := make(map[string]bool, len(orderedVars))
+	for _, v := range orderedVars {
+		declaredSet[v.Name] = true
+	}
+	var extraKeys []string
+	for k := range values {
+		if !declaredSet[k] {
+			extraKeys = append(extraKeys, k)
+		}
+	}
+	sort.Strings(extraKeys)
+	if len(extraKeys) > 0 {
+		buf.WriteString("\n# Existing undeclared variables preserved during merge\n")
+		for _, k := range extraKeys {
+			val := values[k]
+			if strings.ContainsAny(val, " \t#'\"") {
+				val = fmt.Sprintf("%q", val)
+			}
+			buf.WriteString(fmt.Sprintf("%s=%s\n", k, val))
+		}
 	}
 
 	return os.WriteFile(path, []byte(buf.String()), 0644)

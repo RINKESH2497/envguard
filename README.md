@@ -39,18 +39,21 @@ Environment variables are the #1 source of "works on my machine" bugs:
 **Go install:**
 
 ```bash
-go install github.com/envguard/envguard/cmd/envguard@latest
+go install github.com/RINKESH2497/envguard/cmd/envguard@latest
 ```
 
-**Homebrew:**
+**Build from source:**
 
 ```bash
-brew install envguard/tap/envguard
+git clone https://github.com/RINKESH2497/envguard.git
+cd envguard
+make build
+# Binary created at bin/envguard
 ```
 
 **Binary releases:**
 
-Download pre-built binaries from the [Releases](https://github.com/envguard/envguard/releases) page for Linux, macOS, and Windows (amd64/arm64).
+Download pre-built binaries from the [Releases](https://github.com/RINKESH2497/envguard/releases) page for Linux, macOS, and Windows (amd64/arm64).
 
 ### 2. Init
 
@@ -91,15 +94,35 @@ envguard check
 | `envguard scan`      | Scan files and directories for leaked secrets                      |
 | `envguard onboard`   | Interactive wizard to populate a `.env` for new developers         |
 
-### Global Flags
+### Flags & Options
+
+**Global Flags:**
 
 | Flag               | Description                              | Default           |
 | ------------------ | ---------------------------------------- | ----------------- |
-| `--config`         | Path to schema file                      | `envguard.yaml`   |
-| `--env`            | Path to `.env` file                      | `.env`            |
-| `--strict`         | Treat warnings as errors                 | `false`           |
-| `--format`         | Output format (`text`, `json`, `github`) | `text`            |
+| `--config, -c`     | Path to schema file                      | `envguard.yaml`   |
+| `--quiet, -q`      | Suppress non-essential output            | `false`           |
 | `--no-color`       | Disable colored output                   | `false`           |
+
+**Command Flags:**
+
+- `check`:
+  - `--env, -e`: Path to `.env` file (default: `.env`)
+  - `--strict`: Treat warnings as errors
+  - `--env-source`: Source of variables (`file`, `env`, or `auto`)
+- `sync`:
+  - `--output, -o`: Path to `.env.example` output
+  - `--descriptions`: Include descriptions (default: `true`)
+  - `--types`: Include types and required annotations (default: `true`)
+  - `--group-required`: Group into Required/Optional sections (default: `false`)
+- `scan`:
+  - `--recursive, -r`: Scan directories recursively (default: `true`)
+  - `--entropy`: Minimum Shannon entropy threshold (default: `4.5`)
+  - `--exclude`: Glob pattern to exclude (e.g. `*.log`)
+- `onboard`:
+  - `--env, -e`: Target `.env` file path (default: `.env`)
+  - `--skip-optional`: Skip prompting for optional variables
+  - `--use-defaults`: Automatically accept default values
 
 ---
 
@@ -206,38 +229,42 @@ variables:
 
 ## Runtime SDKs
 
-envguard also provides runtime validation SDKs so your application can enforce the schema at startup — not just in CI.
+envguard provides runtime validation SDKs so your application can enforce the schema at startup — not just in CI.
 
 ### Python
 
 ```python
-from envguard import load_env
+import envguard
 
-# Validates on load — raises EnvGuardError on failure
-config = load_env("envguard.yaml")
+# Validates process environment against envguard.yaml at startup
+# Raises envguard.ValidationError on failure
+envguard.check()
 
-print(config.DATABASE_URL)  # type-safe access
-print(config.PORT)          # int, already parsed
+# Or use as decorator for application factories (Flask / FastAPI):
+@envguard.guard()
+def create_app():
+    ...
 ```
 
 ```bash
-pip install envguard
+pip install py-envguard
 ```
 
-### Node.js
+### Node.js / TypeScript
 
 ```typescript
-import { loadEnv } from '@envguard/sdk';
+import { check, guard } from 'envguard';
 
-// Validates and returns typed config — throws on failure
-const config = loadEnv('envguard.yaml');
+// Validates process.env against envguard.yaml at startup
+// Throws ValidationError on failure
+check();
 
-console.log(config.DATABASE_URL); // string
-console.log(config.PORT);         // number
+// Or as Express middleware:
+app.use(guard());
 ```
 
 ```bash
-npm install @envguard/sdk
+npm install envguard
 ```
 
 ---
@@ -249,7 +276,7 @@ Use envguard in your CI pipeline with the official GitHub Action:
 ```yaml
 # .github/workflows/ci.yml
 - name: Validate environment
-  uses: envguard/envguard@v1
+  uses: RINKESH2497/envguard/action@main
   with:
     command: check
     schema-path: envguard.yaml
@@ -271,26 +298,15 @@ Use envguard in your CI pipeline with the official GitHub Action:
 
 ## Pre-commit Hook
 
-Add envguard to your [pre-commit](https://pre-commit.com/) config:
+Add envguard to your `.pre-commit-config.yaml`:
 
 ```yaml
-# .pre-commit-config.yaml
 repos:
-  - repo: https://github.com/envguard/envguard
-    rev: v1.0.0
+  - repo: https://github.com/RINKESH2497/envguard
+    rev: v0.1.0
     hooks:
       - id: envguard-check
-        name: envguard check
-        entry: envguard check --strict
-        language: golang
-        always_run: true
-        pass_filenames: false
       - id: envguard-scan
-        name: envguard scan
-        entry: envguard scan
-        language: golang
-        always_run: true
-        pass_filenames: false
 ```
 
 Or add it manually to `.git/hooks/pre-commit`:
@@ -323,7 +339,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.23"
-      - run: go install github.com/envguard/envguard/cmd/envguard@latest
+      - run: go install github.com/RINKESH2497/envguard/cmd/envguard@latest
       - run: envguard check --config envguard.yaml --env .env.ci --strict
       - run: envguard scan .
 ```
@@ -334,7 +350,7 @@ jobs:
 validate-env:
   image: golang:1.23
   script:
-    - go install github.com/envguard/envguard/cmd/envguard@latest
+    - go install github.com/RINKESH2497/envguard/cmd/envguard@latest
     - envguard check --strict
     - envguard scan .
 ```
@@ -344,7 +360,7 @@ validate-env:
 ```dockerfile
 # Multi-stage: install envguard
 FROM golang:1.23-alpine AS envguard
-RUN go install github.com/envguard/envguard/cmd/envguard@latest
+RUN go install github.com/RINKESH2497/envguard/cmd/envguard@latest
 
 FROM your-app-image
 COPY --from=envguard /go/bin/envguard /usr/local/bin/envguard
@@ -368,4 +384,4 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for gu
 
 envguard is released under the [MIT License](./LICENSE).
 
-Copyright (c) 2024 envguard contributors
+Copyright (c) 2026 envguard contributors

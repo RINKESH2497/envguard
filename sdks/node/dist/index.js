@@ -204,6 +204,36 @@ function parseDotenv(envPath = '.env') {
     }
     return env;
 }
+function unescapeDoubleQuoted(str) {
+    let result = '';
+    let i = 0;
+    while (i < str.length) {
+        if (str[i] === '\\' && i + 1 < str.length) {
+            const next = str[i + 1];
+            if (next === 'n') {
+                result += '\n';
+            }
+            else if (next === 't') {
+                result += '\t';
+            }
+            else if (next === '"') {
+                result += '"';
+            }
+            else if (next === '\\') {
+                result += '\\';
+            }
+            else {
+                result += next;
+            }
+            i += 2;
+        }
+        else {
+            result += str[i];
+            i += 1;
+        }
+    }
+    return result;
+}
 /**
  * Extract the value portion of a `.env` line, respecting quotes.
  * @internal
@@ -215,13 +245,8 @@ function parseDotenvValue(raw) {
     if (raw.startsWith('"')) {
         const end = findClosingQuote(raw, '"');
         if (end !== -1) {
-            let inner = raw.slice(1, end);
-            inner = inner
-                .replace(/\\n/g, '\n')
-                .replace(/\\t/g, '\t')
-                .replace(/\\"/g, '"')
-                .replace(/\\\\/g, '\\');
-            return inner;
+            const inner = raw.slice(1, end);
+            return unescapeDoubleQuoted(inner);
         }
         return raw.slice(1);
     }

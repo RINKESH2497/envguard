@@ -31,9 +31,9 @@ runs:
       run: |
         VERSION="${{ inputs.version }}"
         if [ "$VERSION" = "latest" ]; then
-          go install github.com/envguard/envguard/cmd/envguard@latest
+          go install github.com/RINKESH2497/envguard/cmd/envguard@latest
         else
-          go install github.com/envguard/envguard/cmd/envguard@v${VERSION}
+          go install github.com/RINKESH2497/envguard/cmd/envguard@v${VERSION}
         fi
 
     - name: Run envguard

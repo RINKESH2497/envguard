@@ -10,7 +10,7 @@
 
 The `envguard` team takes security issues seriously. If you discover a security vulnerability, please do NOT create a public issue on GitHub.
 
-Instead, please send an email to **security@envguard.dev** (or open a [Private Vulnerability Report](https://github.com/envguard/envguard/security/advisories/new) via GitHub Security Advisories).
+Please report security vulnerabilities by opening a [Private Vulnerability Report](https://github.com/RINKESH2497/envguard/security/advisories/new) via GitHub Security Advisories.
 
 Please include:
 - A description of the vulnerability and its potential impact.

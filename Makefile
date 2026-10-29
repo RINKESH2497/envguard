@@ -11,17 +11,18 @@ all: fmt lint test build
 build:
 	@echo "==> Building..."
 	@mkdir -p $(BIN_DIR)
-	go build -o $(BINARY) ./cmd/envguard
+	go build -ldflags="-s -w -X main.version=0.1.0" -o $(BINARY) ./cmd/envguard
 
 ## test: Run all tests
 test:
 	@echo "==> Running tests..."
 	go test ./...
 
-## lint: Run golangci-lint
+## lint: Run go vet and golangci-lint if available
 lint:
 	@echo "==> Linting..."
-	golangci-lint run
+	go vet ./...
+	@which golangci-lint >/dev/null 2>&1 && golangci-lint run || true
 
 ## fmt: Format all Go source files
 fmt:

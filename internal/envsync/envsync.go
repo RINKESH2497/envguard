@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/envguard/envguard/internal/schema"
+	"github.com/RINKESH2497/envguard/internal/schema"
 )
 
 // Options controls how the .env.example file is generated and where it is written.
@@ -186,14 +186,8 @@ func Generate(s *schema.Schema, opts Options) ([]byte, error) {
 
 // buildComment formats the descriptive comment line(s) for a variable.
 func buildComment(v schema.Var, opts Options) string {
-	var parts []string
-
-	if opts.IncludeDescriptions && v.Description != "" {
-		parts = append(parts, v.Description)
-	}
-
+	var meta []string
 	if opts.IncludeTypes {
-		var meta []string
 		if v.Type != "" {
 			meta = append(meta, fmt.Sprintf("Type: %s", v.Type))
 		}
@@ -202,16 +196,25 @@ func buildComment(v schema.Var, opts Options) string {
 		} else {
 			meta = append(meta, "Optional")
 		}
-		if len(meta) > 0 {
-			parts = append(parts, "("+strings.Join(meta, ", ")+")")
+	}
+
+	metaStr := ""
+	if len(meta) > 0 {
+		metaStr = "(" + strings.Join(meta, ", ") + ")"
+	}
+
+	if opts.IncludeDescriptions && v.Description != "" {
+		if metaStr != "" {
+			return fmt.Sprintf("# %s %s\n", v.Description, metaStr)
 		}
+		return fmt.Sprintf("# %s\n", v.Description)
 	}
 
-	if len(parts) == 0 {
-		return ""
+	if metaStr != "" {
+		return fmt.Sprintf("# %s\n", metaStr)
 	}
 
-	return "# " + strings.Join(parts, " ") + "\n"
+	return ""
 }
 
 // exampleValue returns the placeholder value for a variable in the .env.example.
