@@ -39,11 +39,23 @@ runs:
     - name: Run envguard
       shell: bash
       run: |
-        ARGS="${{ inputs.command }}"
-        if [ "${{ inputs.command }}" = "check" ]; then
-          ARGS="$ARGS --config ${{ inputs.schema-path }} --env ${{ inputs.env-path }}"
-          if [ "${{ inputs.strict }}" = "true" ]; then
-            ARGS="$ARGS --strict"
-          fi
-        fi
+        CMD="${{ inputs.command }}"
+        case "$CMD" in
+          check)
+            ARGS="check --config ${{ inputs.schema-path }} --env ${{ inputs.env-path }}"
+            if [ "${{ inputs.strict }}" = "true" ]; then
+              ARGS="$ARGS --strict"
+            fi
+            ;;
+          sync)
+            ARGS="sync --config ${{ inputs.schema-path }}"
+            ;;
+          scan)
+            ARGS="scan"
+            ;;
+          *)
+            echo "Error: unsupported command '$CMD'. Must be check, sync, or scan." >&2
+            exit 1
+            ;;
+        esac
         envguard $ARGS

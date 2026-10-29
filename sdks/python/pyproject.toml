@@ -21,3 +21,8 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/RINKESH2497/envguard"
 Repository = "https://github.com/RINKESH2497/envguard"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["envguard*"]
+exclude = ["tests*"]

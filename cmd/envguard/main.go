@@ -48,6 +48,7 @@ in CI, and validate configurations with zero guesswork.`,
 }
 
 func init() {
+	rootCmd.Version = version
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "envguard.yaml", "Path to schema configuration file")
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Suppress non-essential output")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable colored output")

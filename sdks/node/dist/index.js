@@ -152,7 +152,7 @@ function parseVarSpec(name, data) {
     }
     return {
         type: varType,
-        required: data.required !== undefined ? Boolean(data.required) : true,
+        required: data.required !== undefined ? Boolean(data.required) : false,
         default: data.default !== undefined ? String(data.default) : undefined,
         description: String(data.description ?? ''),
         pattern: data.pattern !== undefined ? String(data.pattern) : undefined,
